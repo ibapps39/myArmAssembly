@@ -38,9 +38,49 @@ _main:                                  ; @main
 	.cfi_def_cfa w29, 16
 	.cfi_offset w30, -8
 	.cfi_offset w29, -16
-;;;End Notes
+; cfi = call frame info, describes what a function will do. meta info
+; cfa = call frame address, address of the stack pointer location. meta info
+; X# vs W# are different bit registers. W = 32bit, X = 64bit.
+	mov	w8, #0
+;  mov = move data. Here, moving the value #0 into register w8. 
+	stur	wzr, [x29, #-4]
+; stur = store. wzr = 32bit, intreprets (0-30 general registers) register 31 as zero/discard result.
+; [ ... ] = address of ...
+	stur	w0, [x29, #-8]
+	str	x1, [sp, #16]
+; tr = store
+	adrp	x0, l_.str@PAGE
+; offsets register 0 by the address (PC relative) of the second arg.
+	add	x0, x0, l_.str@PAGEOFF
+; @PAGEOFF indicates the page corresponding to the tag address
+	str	w8, [sp, #12]                   ; 4-byte Folded Spill
+	bl	_printf
+;  BRANCH and LINK instruction, used for calling subroutines.
+	ldr	w8, [sp, #12]                   ; 4-byte Folded Reload
+; load
+	mov	x0, x8
+	ldp	x29, x30, [sp, #32]             ; 16-byte Folded Reload
+; load
+	add	sp, sp, #48                     ; =48
+	ret
+; ret = return
+	.cfi_endproc
+                                        ; -- End function
+	.section	__TEXT,__cstring,cstring_literals
+l_.str:                                 ; @.str
+	.asciz	"Hello, World!\n"
+
+.subsections_via_symbols
+
+
+;;;End Notes;;;
 ; I used https://developer.apple.com/library/archive/documentation/DeveloperTools/Reference/Assembler/040-Assembler_Directives/asm_directives.html#//apple_ref/doc/uid/TP30000823-CJBIFBJG
 ; for some help.
 ; And https://cit.dixie.edu/cs/2810/arm64-assembly.html
-;http://web.mit.edu/rhel-doc/3/rhel-as-en-3/cfi-directives.html
+; http://web.mit.edu/rhel-doc/3/rhel-as-en-3/cfi-directives.html
 ; https://wolchok.org/posts/how-to-read-arm64-assembly-language/
+; https://www.programmersought.com/article/65291424876/
+; https://www.element14.com/community/servlet/JiveServlet/previewBody/41836-102-1-229511/ARM.Reference_Manual.pdf
+; https://stackoverflow.com/questions/41906688/what-are-the-semantics-of-adrp-and-adrl-instructions-in-arm-assembly
+; https://developer.arm.com/documentation/dui0802/a/ADRP
+;;;End;;;
